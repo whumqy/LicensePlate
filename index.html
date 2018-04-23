@@ -1,0 +1,378 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>全国车牌代码地图</title>
+<style>
+* { margin: 0; padding: 0; }
+body { font-family: "Microsoft Yahei"; font-size: 16px; }
+#main {
+	position: absolute;
+	top: 0px;
+	left: 0px;
+	width: 100%;
+	height: 100%;
+}
+#mask_shadow {
+  display: none;
+  opacity: 0;
+  position: fixed;
+  z-index: 3;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, .5);
+}
+#popup {
+  display: none;
+  opacity: 0; 
+  position: absolute;
+  z-index: 4;
+  top: 150px;
+  width: 600px;
+  height: 190px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+}
+#popup .title {
+  position: relative;
+  width: 100%;
+  height: 55px;
+  background-color: #5bc0de;
+  cursor: move;
+}
+#popup .title p {
+  padding-left: 14px;
+  line-height: 55px;
+  color: #fff;
+}
+#popup .title span {
+  position: absolute;
+  top: 12px;
+  right: 20px;
+  width: 30px;
+  height: 30px;
+  color: #000;
+  opacity: .2;
+  font-size: 21px;
+  cursor: pointer;
+  text-align: center;
+  border: 1px solid #333;
+}
+#popup .title span:hover {
+  opacity: .8;
+}
+#popup .cont { width: 90%; height: 120px; background-color: #EDEDED; padding : 30px}
+#myInput {
+	position: absolute;
+    background-image: url('https://static.runoob.com/images/mix/searchicon.png'); /* 搜索按钮 */
+    background-position: 10px 12px; /* 定位搜索按钮 */
+    background-repeat: no-repeat; /* 不重复图片*/
+    width: 20%; 
+    font-size: 16px; /* 加大字体 */
+    padding: 12px 20px 12px 40px; 
+    border: 1px solid #ddd; 
+    margin-bottom: 12px;
+	z-index: 2;	
+}
+ 
+#myUL {
+    /* 移除默认的列表样式 */
+	position: absolute;
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+	width: 23%;
+	z-index: 2;	
+	top: 48px;
+	height:40%;
+	overflow-y:auto;
+}
+ .spanstyle {
+	color: #A8A8A8;
+}
+#myUL li a {
+    border: 1px solid #ddd; /* 链接添加边框 */
+    margin-top: -1px; 
+    background-color: #f6f6f6; 
+    padding: 12px; 
+    text-decoration: none;
+    font-size: 14px; 
+    color: black; 
+    display: block; 
+	width: 94%;
+}
+ 
+#myUL li a.header {
+    background-color: #e2e2e2; 
+    cursor: default; 
+	font-size: 16px;
+}
+ 
+#myUL li a:hover:not(.header) {
+    background-color: #eee;
+}
+</style>
+<script src="js/echarts.js"></script>
+<script src="js/jquery.min.js"></script>
+
+</head>
+<body>
+<div id="main" onclick="deletelist()"></div>
+<!--<center style = "font-size:20px">中国</center>-->
+<!-- 代码部分begin -->
+<input type="text" id="myInput" onkeyup="myFunction()" onclick="showlists()" placeholder="搜索...">
+<ul id="myUL">
+</ul>
+
+<!-- 弹窗部分 -->
+<div id="popup">
+<div class="title">
+	<p id="title"></p>
+	<span>x</span>
+</div>
+<div class="cont" id="dialogbox" style="overflow-y:auto"></div>
+</div>
+<div id="mask_shadow"></div>
+
+<script>
+	var pName = 'china';
+	var provincesText = ['河北', '山西', '内蒙古', '辽宁', '吉林','黑龙江', '江苏', '浙江', '安徽', '福建', '江西', '山东', '河南', '湖北', '湖南', '广东', '广西', '海南', '四川', '贵州', '云南', '西藏', '陕西', '甘肃', '青海', '宁夏', '新疆', '北京', '上海', '天津', '重庆'];
+	var simplified = ['冀','晋','蒙','辽','吉','黑','苏','浙','皖','闽','赣','鲁','豫','鄂','湘','粤','桂','琼','川','贵','云','藏','陕','甘','青','宁','新','京','沪','津','渝'];
+	var urlArr = ['HeB.html','SX1.html','NMG.html','LN.html','JL.html','HLJ.html','JS.html','ZJ.html','AH.html','FJ.html','JX.html','SD.html','HeN.html','HB.html','HN.html','GD.html','GX.html','HaiN.html','SC.html','GZ.html','YN.html','XZ.html','SX2.html','GS.html','QH.html','NX.html','XJ.html'];
+	var count=[11,11,12,14,9,13,13,11,17,9,11,17,18,17,15,21,14,18,21,9,16,7,10,14,8,5,18];
+	var arr1=[];
+	var arr2=[];
+	arr1[0]=['石家庄市','唐山市','秦皇岛市','邯郸市','邢台市','保定市','张家口市','承德市','沧州市','廊坊市','衡水市','省直机关'];
+	arr2[0]=['冀A','冀B','冀C','冀D','冀E','冀F','冀G','冀H','冀J','冀R','冀T','冀O'];
+	arr1[1]=['太原市','大同市','阳泉市','长治市','晋城市','朔州市','忻州市','吕梁市','晋中市','临汾市','运城市'];
+	arr2[1]=['晋A','晋B','晋C','晋D','晋E','晋F','晋H','晋J','晋K','晋L','晋M'];
+	arr1[2]=['呼和浩特市','包头市','乌海市','赤峰市','呼伦贝尔市','兴安盟','通辽市','锡林郭勒盟','乌兰察布市','鄂尔多斯市','巴彦淖尔市','阿拉善盟'];
+	arr2[2]=['蒙A','蒙B','蒙C','蒙D','蒙E','蒙F','蒙G','蒙H','蒙J','蒙K','蒙L','蒙M'];
+	arr1[3]=['沈阳市','大连市','鞍山市','抚顺市','本溪市','丹东市','锦州市','营口市','阜新市','辽阳市','盘锦市','铁岭市','朝阳市','葫芦岛市'];
+	arr2[3]=['辽A','辽B','辽C','辽D','辽E','辽F','辽G','辽H','辽J','辽K','辽L','辽M','辽N','辽P'];
+	arr1[4]=['长春市','吉林市','四平市','辽源市','通化市','白山市','白城市','延边朝鲜族自治州','松原市','长白山保护开发区'];
+	arr2[4]=['吉A','吉B','吉C','吉D','吉E','吉F','吉G','吉H','吉J','吉K'];
+	arr1[5]=['哈尔滨市','齐齐哈尔市','牡丹江市','佳木斯市','大庆市','伊春市','鸡西市','鹤岗市','双鸭山市','七台河市','绥化市','黑河市','大兴安岭地区','黑龙江省农垦总局'];
+	arr2[5]=['黑A、黑L','黑B','黑C','黑D','黑E','黑F','黑G','黑H','黑J','黑K','黑M','黑N','黑P','黑R'];
+	arr1[6]=['南京市','无锡市','徐州市','常州市','苏州市','南通市','连云港市','淮安市','盐城市','扬州市','镇江市','泰州市','宿迁市'];
+	arr2[6]=['苏A','苏B','苏C','苏D','苏E','苏F','苏G','苏H','苏J','苏K','苏L','苏M','苏N'];
+	arr1[7]=['杭州市','宁波市','温州市','绍兴市','湖州市','嘉兴市','金华市','衢州市','台州市','丽水市','舟山市'];
+	arr2[7]=['浙A','浙B','浙C','浙D','浙E','浙F','浙G','浙H','浙J','浙K','浙L'];
+	arr1[8]=['合肥市','芜湖市','蚌埠市','淮南市','马鞍山市','淮北市','铜陵市','安庆市','黄山市','阜阳市','宿州市','滁州市','六安市','宣城市','池州市','亳州市','巢湖市'];
+	arr2[8]=['皖A','皖B','皖C','皖D','皖E、皖Q','皖F','皖G','皖H','皖J','皖K','皖L','皖M','皖N','皖P','皖R','皖S','皖A、皖B、皖E、皖Q'];
+	arr1[9]=['福州市','莆田市','泉州市','厦门市','漳州市','龙岩市','三明市','南平市','宁德市'];
+	arr2[9]=['闽A、闽K','闽B','闽C','闽D','闽E','闽F','闽G','闽H','闽J'];
+	arr1[10]=['南昌市','赣州市','宜春市','吉安市','上饶市','抚州市','九江市','景德镇市','萍乡市','新余市','鹰潭市','江西省国家安全系统'];
+	arr2[10]=['赣A','赣B','赣C','赣D','赣E','赣F','赣G','赣H','赣J','赣K','赣L','赣S（原赣T）'];
+	arr1[11]=['济南市','青岛市','淄博市','枣庄市','东营市','烟台市','潍坊市','济宁市','泰安市','威海市','日照市','滨州市','德州市','聊城市','临沂市','菏泽市','莱芜市','省直系统私车'];
+	arr2[11]=['鲁A','鲁B、鲁U','鲁C','鲁D','鲁E','鲁F、鲁Y','鲁G、鲁V','鲁H','鲁J','鲁K','鲁L','鲁M','鲁N','鲁P','鲁Q','鲁R','鲁S','鲁W'];
+	arr1[12]=['郑州市','开封市','洛阳市','平顶山市','安阳市','鹤壁市','新乡市','焦作市','濮阳市','许昌市','漯河市','三门峡市','商丘市','周口市','驻马店市','南阳市','信阳市','济源市'];
+	arr2[12]=['豫A','豫B','豫C','豫D','豫E','豫F','豫G','豫H','豫J','豫K','豫L','豫M','豫N','豫P','豫Q','豫R','豫S','豫U'];
+	arr1[13]=['武汉市','黄石市','十堰市','荆州市','宜昌市','襄樊市（襄阳市）','鄂州市','荆门市','黄冈市','孝感市','咸宁市','仙桃市','潜江市','神农架林区','恩施土家族苗族自治州','天门市','随州市'];
+	arr2[13]=['鄂A','鄂B','鄂C','鄂D','鄂E','鄂F','鄂G','鄂H','鄂J','鄂K','鄂L','鄂M','鄂N','鄂P','鄂Q','鄂R','鄂S'];
+	arr1[14]=['长沙市','株洲市','湘潭市','衡阳市','邵阳市','岳阳市','张家界市','益阳市','常德市','娄底市','郴州市','永州市','怀化市','湘西土家族苗族自治州'];
+	arr2[14]=['湘A','湘B','湘C','湘D','湘E','湘F','湘G','湘H','湘J','湘K','湘L','湘M','湘N','湘U'];
+	arr1[15]=['广州市','深圳市','珠海市','汕头市','佛山市','韶关市','湛江市','肇庆市','江门市','茂名市','惠州市','梅州市','汕尾市','河源市','阳江市','清远市','东莞市','中山市','潮州市','揭阳市','云浮市'];
+	arr2[15]=['粤A','粤B','粤C','粤D','粤E、粤X、粤Y','粤F','粤G','粤H','粤J','粤K','粤L','粤M','粤N','粤P','粤Q','粤R','粤S','粤T','粤U','粤V','粤W'];
+	arr1[16]=['南宁市','柳州市','桂林市','梧州市','北海市','崇左市','来宾市','贺州市','玉林市','百色市','河池市','钦州市','防城港市','贵港市'];
+	arr2[16]=['桂A','桂B','桂C、桂H','桂D','桂E','桂F','桂G','桂J','桂K','桂L','桂M','桂N','桂P','桂R'];
+	arr1[17]=['海口市','三亚市','文昌市','琼海市','万宁市','临高县','澄迈县','定安县','屯昌县','五指山市','东方市','昌江黎族自治县','白沙黎族自治县','乐东黎族自治县','陵水黎族自治县','保亭黎族苗族自治县','琼中黎族苗族自治县','儋州市','洋浦经济开发区（儋州市管辖）'];
+	arr2[17]=['琼A','琼B','琼C','琼C','琼C','琼C','琼C','琼C','琼C','琼D','琼D','琼D','琼D','琼D','琼D','琼D','琼D','琼F','琼E'];
+	arr1[18]=['成都市','绵阳市','自贡市','攀枝花市','泸州市','德阳市','广元市','遂宁市','内江市','乐山市','资阳市','宜宾市','南充市','达州市','雅安市','阿坝藏族羌族自治州','甘孜藏族自治州','凉山彝族自治州','广安市','巴中市','眉山市'];
+	arr2[18]=['川A、川G','川B','川C','川D','川E','川F','川H','川J','川K','川L','川M','川Q','川R','川S','川T','川U','川V','川W','川X','川Y','川Z'];
+	arr1[19]=['贵阳市','六盘水市','遵义市','铜仁地区（铜仁市）','黔西南布依族苗族自治州','毕节地区（毕节市）','安顺市','黔东南苗族侗族自治州','黔南布依族苗族自治州'];
+	arr2[19]=['贵A','贵B','贵C','贵D','贵E','贵F','贵G','贵H','贵J'];
+	arr1[20]=['昆明市','昭通市','曲靖市','楚雄彝族自治州','玉溪市','红河哈尼族彝族自治州','文山壮族苗族自治州','普洱市','西双版纳傣族自治州','大理白族自治州','保山市','德宏傣族景颇族自治州','丽江市','怒江傈僳族自治州','迪庆藏族自治州','临沧市'];
+	arr2[20]=['云A','云C','云D','云E','云F','云G','云H','云J','云K','云L','云M','云N','云P','云Q','云R','云S'];
+	arr1[21]=['拉萨市','昌都地区（昌都市）','山南地区（山南市）','日喀则地区（日喀则市）','那曲地区（那曲市）','阿里地区','林芝地区（林芝市）'];
+	arr2[21]=['藏A','藏B','藏C','藏D','藏E','藏F','藏G'];
+	arr1[22]=['西安市','铜川市','宝鸡市','咸阳市','渭南市','汉中市','安康市','商洛市','延安市','榆林市'];
+	arr2[22]=['陕A','陕B','陕C','陕D、陕V','陕E','陕F','陕G','陕H','陕J','陕K'];
+	arr1[23]=['兰州市','嘉峪关市','金昌市','白银市','天水市','酒泉市','张掖市','武威市','定西市','陇南市','平凉市','庆阳市','临夏回族自治州','甘南藏族自治州'];
+	arr2[23]=['甘A','甘B','甘C','甘D','甘E','甘F','甘G','甘H','甘J','甘K','甘L','甘M','甘N','甘P'];
+	arr1[24]=['西宁市','海东地区（海东市）','海北藏族自治州','黄南藏族自治州','海南藏族自治州','果洛藏族自治州','玉树藏族自治州','海西蒙古族藏族自治州'];
+	arr2[24]=['青A','青B','青C','青D','青E','青F','青G','青H'];
+	arr1[25]=['银川市','石嘴山市','吴忠市','固原市','中卫市'];
+	arr2[25]=['宁A','宁B','宁C','宁D','宁E'];
+	arr1[26]=['乌鲁木齐市','昌吉回族自治州','五家渠市','石河子市','伊犁哈萨克自治州','博尔塔拉蒙古自治州','塔城地区','阿勒泰地区','克拉玛依市','吐鲁番地区','哈密地区','巴音郭楞蒙古自治州','阿克苏地区','阿拉尔市','克孜勒苏柯尔克孜自治州','喀什地区','图木舒克市','和田地区'];
+	arr2[26]=['新A','新B','新B','新C','新D、新F','新E','新G','新H','新J','新K','新L','新M','新N','新N','新P','新Q','新Q','新R'];
+	var str="";
+	for(var i=0;i<urlArr.length;i++)
+	{
+		str=str+"<li><a href=\"\" class=\"header\"><span>"+provincesText[i]+"</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class=\"spanstyle\">"+simplified[i]+"</span></a></li>";
+		for(var j=0;j<arr1[i].length;j++)
+		{
+			var urltemp="";
+			if(j<count[i])
+				urltemp=urlArr[i]+"?id="+j;
+			else
+				urltemp=urlArr[i];
+			str=str+"<li><a href=\""+urltemp+"\"><span>"+arr1[i][j]+"</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class=\"spanstyle\">"+arr2[i][j]+"</span></a></li>";
+		}
+	}
+	function showlists()
+	{
+		//var str = "<li><a href=\"\" class=\"header\"><span>苏</span></a></li><li><a href=\"JS.html?id=0\"><span>苏A</span>&nbsp;&nbsp;&nbsp;&nbsp;<span class=\"spanstyle\">南京</span></a></li><li><a href=\"#\">苏B</a></li><li><a href=\"\" class=\"header\">沪</a></li><li><a href=\"#\">沪A</a></li><li><a href=\"#\">沪B</a></li>";
+		document.getElementById("myUL").innerHTML = str;
+	}
+	function deletelist()
+	{
+		document.getElementById("myUL").innerHTML = "";
+		var mydialogbox = document.getElementById("dialogbox");
+		mydialogbox.innerHTML = "";
+		var mytitle = document.getElementById("title");
+		mytitle.innerHTML="";
+		document.getElementById("myInput").value="";
+	}
+	function myFunction()
+	{
+		// 声明变量
+		var input, filter, ul, li, a, i;
+		input = document.getElementById('myInput');
+		filter = input.value.toUpperCase();
+		ul = document.getElementById("myUL");
+		li = ul.getElementsByTagName('li');
+	 
+		// 循环所有列表，查找匹配项
+		for (i = 0; i < li.length; i++) {
+			a = li[i].getElementsByTagName("a")[0];
+			if (a.innerText.toUpperCase().indexOf(filter) > -1) {
+				li[i].style.display = "";
+			} else {
+				li[i].style.display = "none";
+			}
+		}
+	}
+    // 路径配置
+    require.config({
+        paths: {
+            echarts: 'http://echarts.baidu.com/build/dist'
+        }
+    });
+    // 使用
+    require(['echarts','echarts/chart/map'],function (ch) {
+        // 基于准备好的dom，初始化echarts图表
+        var myChart = ch.init(document.getElementById('main'));
+		//var myChart = echarts.init(document.getElementById('main'));
+        var option = {
+			title : {
+				show : false
+			},
+		    tooltip : {
+		        trigger: 'item',
+		        formatter: function(data){
+					console.log(data);
+					for(var i=0;i<provincesText.length;i++)
+					{
+						if(data[1]==provincesText[i])
+							return data[1]+' : '+simplified[i]+'<br>点击查看详细内容';
+					}
+					if(data[1]=='香港'||data[1]=='澳门'||data[1]=='台湾')
+						return '点击查看详细内容';
+					else if(data[1]=='南海诸岛')
+						return '暂无数据';
+				}
+		    },
+		    series : [{
+	            name: '中国',
+	            type: 'map',
+	            mapType: 'china',
+	            selectedMode : 'single',
+	            itemStyle:{
+	                normal:{
+						label:{show:true},
+						borderWidth: .5,//区域边框宽度
+                        borderColor: '#009fe8',//区域边框颜色
+                        areaColor:"#ffefd5",//区域颜色
+						},
+	                emphasis:{
+						label:{show:true}
+					}
+	            },
+	            data:[{name: '上海',value:'沪'}],
+	        }]
+		};
+		myChart.setOption(option);
+		var ecConfig = require('echarts/config');
+		myChart.on('click', function (param){
+			document.getElementById("myUL").innerHTML = "";
+		    var selected = param.name;
+			for(var i=0;i<urlArr.length;i++)
+			{
+				if(provincesText[i]==selected)
+					location.href = urlArr[i];
+			}
+			switch(selected){
+				case '上海':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "上海市车牌地域编号包括沪A、沪B、沪C、沪D 、沪E 、沪F、沪G 、沪H 、沪J、沪K 、沪L、 沪M、沪N、沪AX、沪BX、沪DX。<br>其中沪C是远郊区牌照，不能进外环线；沪AX、沪BX和沪DX是私营出租牌照。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="上海市";
+					break;
+				}
+				case '北京':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "北京市车牌地域编号包括京A、京B、京C、京D、京E、京F、京G、京H、京J、京K、京L、京M 、京N、京P、京Q、京Y （北京市远郊区）。<br>其中京B是出租车牌照；京D是警车牌照；京Y是远郊区牌照。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="北京市";
+					break;
+				}
+				case '天津':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "天津市车牌地域编号津A、津B、津C、津D、津E、津F 、津G 、津H 、津J、津K、津L、津M、津N、津P、津Q、津R。<br>其中津E是出租车牌照。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="天津市";
+					break;
+				}
+				case '重庆':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "重庆市车牌地域编号 渝A、渝B、渝C、渝D、渝F、渝G、渝H、渝N。<br>其中渝N是国有政企专用牌照。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="重庆市";
+					break;
+				}
+				case '香港':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "香港车牌前两位字母最早用HK，后来从AA开始根据字母排序，现在已到NX<br><br>以下是特殊车辆牌照编码规则：<br>\"A\"：消防处救护车及救护电自行车（流动伤者治疗车及乡村救护车使用\"F\"字头车牌；医疗辅助队救护车使用\"AM\"字头车牌；医院管理局及圣约翰救伤队救护车则使用民用车牌）。<br>\"F\"：消防处其他车辆。<br>\"T\"：分为字头及字尾。字头属于白底红字的临时车牌，供没有正式车牌的车辆使用，例如购买汽车时的试车或者不能登记车牌的左軚车。字尾则供挂接车的拖架使用。<br>\"A\"字头包含最多3个数字（最新是A36X），\"F\"字头包含最多4个数字（到F20XX），而\"T\"牌无论属于字头还是字尾可包含最多5个数字。<br>\"AM\"：一般政府车辆。<br>\"LC\"：立法会车辆。<br>\"ZG\"：中国人民解放军驻香港部队车辆。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="香港特别行政区";
+					break;
+				}
+				case '澳门':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "民用及商业车辆的登记号码是澳门的葡萄牙文Macau的首个字符\"M\"加以一个英文字母配以一组4位数字，英文字母后及每2个数字就会有一个\"-\"的符号。<br>最早发出的登记号码只有\"M\"字头，然后是\"MA\"和\"MB\"字头，以此类推。";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="澳门特别行政区";
+					break;
+				}
+				case '台湾':
+				{
+					var mydialogbox = document.getElementById("dialogbox");
+					mydialogbox.innerHTML = "台湾自2012年12月17日起实施的新式车牌模板为\"ABC-5678\"，即前三位为字母，编码范围是AAA~DZZ、FAA~QZZ、SAA~VZZ、XAA~ZZZ，后四位是数字。<br>由于台湾的车牌样式复杂，且老旧样式车牌没有统一换发，所以种类繁多。<br>台湾车牌的更多样式与历史参见<a href=\"https://zh.wikipedia.org/wiki/%E8%87%BA%E7%81%A3%E8%BB%8A%E8%BC%9B%E7%89%8C%E7%85%A7\">维基百科</a>";
+					var mytitle = document.getElementById("title");
+					mytitle.innerHTML="台湾";
+					break;
+				}
+				default:
+				{
+					document.getElementById("dialogbox").innerHTML="";
+					document.getElementById("title").innerHTML="";
+				}
+			}
+        });
+    });
+	$(function () {
+		$('#popup').popup({ifDrag: true, dragLimit: true});
+	});
+</script>
+<script src="js/popup.js"></script>
+<!-- 代码部分end -->
+</body>
+</html>
