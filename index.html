@@ -2,7 +2,6 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta http-equiv="Content-Security-Policy" content="upgrade-insecure-requests">
 <title>全国车牌代码地图</title>
 <style>
 * { margin: 0; padding: 0; }
@@ -248,7 +247,7 @@ body { font-family: "Microsoft Yahei"; font-size: 16px; }
     // 路径配置
     require.config({
         paths: {
-            echarts: 'http://echarts.baidu.com/build/dist'
+            echarts: 'js'
         }
     });
     // 使用
