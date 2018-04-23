@@ -239,6 +239,17 @@ body { font-family: "Microsoft Yahei"; font-size: 16px; }
 			a = li[i].getElementsByTagName("a")[0];
 			if (a.innerText.toUpperCase().indexOf(filter) > -1) {
 				li[i].style.display = "";
+				if(a.className!='header')
+				{
+					for(var j=i;j>=0;j--)
+					{
+						if(li[j].getElementsByTagName("a")[0].className=='header')
+						{
+							li[j].style.display = "";
+							break;
+						}
+					}
+				}
 			} else {
 				li[i].style.display = "none";
 			}
